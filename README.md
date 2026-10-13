@@ -1,115 +1,391 @@
-# web-programming-2026-template
+# CinemaHub
 
-A reusable Django project with no bundled application, SQLite, and Django's
-standard admin, authentication, sessions, messages, and staticfiles support.
+CinemaHub — це сайт кінотеатру, на якому можна переглядати фільми, дізнаватися розклад сеансів і бронювати місця.
 
-## Local setup
+Я вирішив зробити сайт для одного кінотеатру з декількома залами. Ідея полягає в тому, 
+щоб людина могла вибрати фільм, подивитися, коли він іде, та забронювати місце, не звертаючись до каси.
+На головній сторінці буде список фільмів. Їх можна буде шукати за назвою, фільтрувати за жанром і сортувати за 
+рейтингом або назвою. На сторінці фільму буде його опис, тривалість, жанр, вікове обмеження та доступні сеанси.
 
-Requires the latest patch release of Python 3.12, 3.13, or 3.14. Run these commands from the project directory containing
-`manage.py`.
+Також планую зробити:
+- Перегляд розкладу на вибрану дату.
+- Перегляд вільних і зайнятих місць.
+- Реєстрацію та вхід користувачів.
+- Бронювання місць.
+- Особистий кабінет з історією бронювань.
+- Можливість скасувати бронювання.
+- Редагування даних профілю.
 
-1. Create and activate a virtual environment:
+Фільми, жанри, зали та сеанси адміністратор зможе додавати й редагувати через стандартну адміністративну панель Django.
 
-   ```bash
-   python -m venv .venv
-   
-   # for linux/macos
-   source .venv/bin/activate
-   # for Windows:
-   .venv\Scripts\activate
-   ```
+## REST API
 
-2. Install dependencies:
+Для обміну даними між сайтом і сервером планую використовувати REST API. Дані передаватимуться у форматі JSON.
 
-   ```bash
-   python -m pip install -r requirements-dev.txt
-   ```
+Основні методи:
+- `GET` — отримання даних.
+- `POST` — створення запису.
+- `PATCH` — зміна даних.
+- `DELETE` — видалення або скасування.
 
+У прикладах `{id}` — це ID конкретного запису.
 
-3. Apply migrations to create the local SQLite database:
+### 1. Фільми
 
-   ```bash
-   python manage.py migrate
-   ```
+**GET /api/movies/**
 
-4. Start the development server:
+Повертає список фільмів.
 
-   ```bash
-   python manage.py runserver
-   ```
+Параметри:
+- `search` — пошук за назвою.
+- `genre_id` — фільтр за жанром.
+- `ordering` — сортування (`title`, `-title`, `rating`, `-rating`).
 
-## Endpoints
+Приклад: `/api/movies/?genre_id=1&ordering=-rating`
 
-With the server running at `http://127.0.0.1:8000`:
+Відповідь: `200 OK`
 
-| URL | Behavior |
-| --- | --- |
-| http://127.0.0.1:8000/ | No application homepage; may show Django's development welcome page while `DEBUG = True` |
-| http://127.0.0.1:8000/admin/ | Django admin, available after applying migrations |
-
-With `DEBUG = False`, unmatched URLs such as `/` return HTTP 404.
-
-To create an account for admin login, run this after applying migrations:
-
-```bash
-python manage.py createsuperuser
+```json
+[
+  {
+    "id": 1,
+    "title": "Interstellar",
+    "genre_id": 1,
+    "duration": 169,
+    "rating": 8.7
+  }
+]
 ```
 
-## Add your first application
+**GET /api/movies/{id}/**
 
-1. Create an app from the directory containing `manage.py` (replace `myapp`
-   with your application name):
+Повертає детальну інформацію про фільм.
 
-   ```bash
-   python manage.py startapp myapp
-   ```
+Відповідь: `200 OK`
 
-2. Add its generated configuration class, `myapp.apps.MyappConfig`, to
-   `INSTALLED_APPS` in `config/settings.py`.
-3. Define your views and create `myapp/urls.py` with their URL patterns.
-4. Register that URLconf in `config/urls.py` using `path()` and `include()`,
-   choosing a URL prefix for the app and retaining the admin route.
-
-See the official Django 6.1 tutorial for
-[views and URL registration](https://docs.djangoproject.com/en/6.1/intro/tutorial01/)
-and [app registration and models](https://docs.djangoproject.com/en/6.1/intro/tutorial02/).
-
-## Git attributes
-
-Git detects text files automatically and normalizes them to LF. Checkouts use
-LF on Linux and Windows, while `.bat` and `.cmd` files use CRLF. Binary files
-are auto-detected and left unchanged, helping avoid newline-only diffs.
-
-
-## Code style and submission verification
-
-All submissions are required to adhere to PEP-8, Django best practices, and standard HTML/CSS/JS formatting. A deterministic cross-platform utility is provided to help you check and format your code.
-
-### 1. Verification (Check Mode)
-Before submitting, verify that all files adhere to the required standards:
-
-```bash
-python check_submission.py
+```json
+{
+  "id": 1,
+  "title": "Interstellar",
+  "description": "Фантастичний фільм про космічну подорож",
+  "genre_id": 1,
+  "duration": 169,
+  "rating": 8.7,
+  "age_rating": "12+"
+}
 ```
 
-If all checks pass, you are ready to submit! If any checks fail, review the error output or run the auto-formatter below.
+### 2. Жанри
 
-### 2. Auto-Formatting
-To automatically format Python files, fix safe PEP-8 rules, format Django HTML templates, and format CSS/JS static files:
+**GET /api/genres/**
 
-```bash
-python check_submission.py --format
+Повертає список жанрів.
+
+Відповідь: `200 OK`
+
+```json
+[
+  {"id": 1, "name": "Фантастика"},
+  {"id": 2, "name": "Комедія"},
+  {"id": 3, "name": "Драма"}
+]
 ```
 
-### 3. PyCharm Integration
-If you use PyCharm:
-- **One-Click Run:** In the top-right toolbar run configurations dropdown, select **"Verify Submission"** or **"Format Project"** and click the green **Play** button.
+**GET /api/genres/{id}/**
 
-## Development only
+Повертає інформацію про конкретний жанр.
 
-The included settings use `DEBUG = True`, a development secret key, and a local
-SQLite database. The default mailer uses the console backend: email is printed
-to the process's console instead of being delivered.
+Відповідь: `200 OK`
 
-This configuration and Django's development server are not suitable for
-production deployment.
+```json
+{
+  "id": 1,
+  "name": "Фантастика"
+}
+```
+
+### 3. Зали та місця
+
+**GET /api/halls/**
+
+Повертає список залів кінотеатру.
+
+Відповідь: `200 OK`
+
+```json
+[
+  {"id": 1, "name": "Зал 1"},
+  {"id": 2, "name": "Зал 2"}
+]
+```
+
+**GET /api/halls/{id}/seats/**
+
+Повертає місця конкретного залу. Їхня зайнятість залежить від сеансу, тому тут показується лише розташування.
+
+Відповідь: `200 OK`
+
+```json
+[
+  {"id": 1, "row": 1, "number": 1},
+  {"id": 2, "row": 1, "number": 2}
+]
+```
+
+### 4. Сеанси
+
+**GET /api/sessions/**
+
+Повертає список сеансів.
+
+Параметри:
+- `movie_id` — сеанси конкретного фільму.
+- `date` — сеанси на вибрану дату.
+
+Приклад: `/api/sessions/?movie_id=1&date=2026-10-20`
+
+Відповідь: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "movie_id": 1,
+    "hall_id": 1,
+    "start_time": "2026-10-20T18:00:00+03:00",
+    "price": 200
+  }
+]
+```
+
+**GET /api/sessions/{id}/**
+
+Повертає інформацію про конкретний сеанс.
+
+Відповідь: `200 OK`
+
+```json
+{
+  "id": 1,
+  "movie_id": 1,
+  "hall_id": 1,
+  "start_time": "2026-10-20T18:00:00+03:00",
+  "price": 200
+}
+```
+
+**GET /api/sessions/{id}/seats/**
+
+Повертає місця залу та показує, які з них вільні на конкретний сеанс.
+
+Відповідь: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "row": 1,
+    "number": 1,
+    "is_available": true
+  },
+  {
+    "id": 2,
+    "row": 1,
+    "number": 2,
+    "is_available": false
+  }
+]
+```
+
+### 5. Користувачі
+
+**POST /api/auth/register/**
+
+Реєструє нового користувача.
+
+Запит:
+
+```json
+{
+  "username": "user123",
+  "email": "user@example.com",
+  "password": "example123"
+}
+```
+
+Відповідь: `201 Created`
+
+```json
+{
+  "id": 1,
+  "username": "user123",
+  "email": "user@example.com"
+}
+```
+
+**POST /api/auth/login/**
+
+Вхід в обліковий запис.
+
+Запит:
+
+```json
+{
+  "username": "user123",
+  "password": "example123"
+}
+```
+
+Відповідь: `200 OK`
+
+```json
+{
+  "message": "Login successful"
+}
+```
+
+**POST /api/auth/logout/**
+
+Вихід з облікового запису. Тіло запиту відсутнє.
+
+Відповідь: `200 OK`
+
+```json
+{
+  "message": "Logout successful"
+}
+```
+
+**GET /api/users/me/**
+
+Повертає інформацію про поточного користувача.
+
+Відповідь: `200 OK`
+
+```json
+{
+  "id": 1,
+  "username": "user123",
+  "email": "user@example.com"
+}
+```
+
+**PATCH /api/users/me/**
+
+Змінює дані профілю.
+
+Запит:
+
+```json
+{
+  "email": "new@example.com"
+}
+```
+
+Відповідь: `200 OK`
+
+```json
+{
+  "id": 1,
+  "username": "user123",
+  "email": "new@example.com"
+}
+```
+
+Для авторизації планую використати стандартні сесії Django. Паролі не будуть повертатися у відповідях API.
+
+### 6. Бронювання
+
+Для спрощення одне бронювання буде відповідати одному місцю на одному сеансі. 
+Якщо користувачу потрібно декілька місць, він зможе забронювати їх окремо.
+
+**GET /api/bookings/**
+
+Повертає історію бронювань поточного користувача.
+
+Відповідь: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "session_id": 1,
+    "seat_id": 2,
+    "price": 200,
+    "status": "confirmed"
+  }
+]
+```
+
+**POST /api/bookings/**
+
+Створює бронювання. Користувач вибирає сеанс і місце.
+
+Запит:
+
+```json
+{
+  "session_id": 1,
+  "seat_id": 2
+}
+```
+
+Відповідь: `201 Created`
+
+```json
+{
+  "id": 1,
+  "session_id": 1,
+  "seat_id": 2,
+  "price": 200,
+  "status": "confirmed"
+}
+```
+
+Якщо місце вже зайняте, сервер повертає `409 Conflict`:
+
+```json
+{
+  "error": "Seat is already booked"
+}
+```
+
+**DELETE /api/bookings/{id}/**
+
+Скасовує бронювання користувача. Запис залишається в історії, але місце знову стає доступним.
+
+Тіло запиту відсутнє.
+
+Відповідь: `200 OK`
+
+```json
+{
+  "id": 1,
+  "status": "cancelled"
+}
+```
+
+
+### Обробка помилок
+
+Якщо користувач запитує неіснуючий фільм або сеанс, сервер повертає `404 Not Found`. Якщо вибране місце вже заброньоване, 
+повертається `409 Conflict`. Інші помилки планую обробляти під час реалізації API.
+
+## База даних
+
+Для зберігання даних планую використовувати SQLite. На початку достатньо семи основних таблиць.
+
+### Зв'язки між таблицями
+
+- Один жанр може мати багато фільмів, але кожен фільм має один основний жанр.
+- Один фільм може мати багато сеансів.
+- Один зал має багато місць.
+- Один зал може використовуватися для багатьох сеансів.
+- Один користувач може створювати багато бронювань.
+- Кожне бронювання пов'язане з користувачем, сеансом і конкретним місцем.
+
+Зайнятість місця визначатиметься за активними бронюваннями на відповідний сеанс, а не зберігатиметься окремо в таблиці місць.
+
+### Схема бази даних
+
+![Схема бази даних](database.png)
