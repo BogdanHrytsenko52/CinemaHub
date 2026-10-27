@@ -1,5 +1,167 @@
 # CinemaHub
 
+CinemaHub — REST API для одного кінотеатру з кількома залами. На цьому етапі
+реалізовано керування жанрами, фільмами, залами, місцями й сеансами. Дані
+зберігаються у SQLite через Django ORM.
+
+Схема бази даних з попереднього етапу доступна у [database.png](database.png).
+Моделі `User` і `Booking`, а також пов'язані маршрути, залишаються частиною
+майбутньої роботи та зараз не реалізовані.
+
+## Технології та сумісність
+
+- Python 3.12
+- Django 6.0.9
+- Django REST Framework 3.18.3
+- django-cors-headers 4.9.0
+- SQLite
+
+Версії зафіксовані в `requirements.txt`. Django 6.0, DRF 3.18.3 і
+django-cors-headers 4.9.0 підтримують Python 3.12; django-cors-headers 4.9.0
+також заявляє підтримку Django 6.0. Версію Django обрано 6.0.9 замість
+початкової 6.1.x саме для задокументованої сумісності з CORS-пакетом.
+
+## Як запустити проєкт
+
+У PowerShell із кореня репозиторію:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+API буде доступне за адресою `http://127.0.0.1:8000/api/`.
+
+Перевірки:
+
+```powershell
+python manage.py check
+python manage.py test
+```
+
+## Поточна специфікація API
+
+Усі запити та відповіді використовують JSON. Базова адреса в прикладах:
+`http://127.0.0.1:8000`.
+
+### Жанри
+
+- `GET /api/genres/` — список; `POST /api/genres/` — створення.
+- `GET /api/genres/{id}/` — один об'єкт; `PATCH` — часткове редагування;
+  `DELETE` — видалення.
+
+```json
+{"name": "Фантастика"}
+```
+
+### Фільми
+
+- `GET /api/movies/`, `POST /api/movies/`
+- `GET /api/movies/{id}/`, `PATCH /api/movies/{id}/`, `DELETE /api/movies/{id}/`
+
+Список підтримує `search`, `genre_id` і `ordering`. Допустимі значення
+`ordering`: `title`, `-title`, `rating`, `-rating`.
+
+```json
+{
+  "title": "Interstellar",
+  "description": "Фантастичний фільм про космічну подорож",
+  "genre_id": 1,
+  "duration": 169,
+  "rating": "8.7",
+  "age_rating": "12+"
+}
+```
+
+Відповідь списку містить `id`, `title`, `genre_id`, `duration`, `rating`.
+Детальна відповідь також містить `description` і `age_rating`.
+
+### Зали та місця
+
+- `GET /api/halls/`, `POST /api/halls/`
+- `GET /api/halls/{id}/`, `PATCH /api/halls/{id}/`, `DELETE /api/halls/{id}/`
+- `GET /api/halls/{id}/seats/` — місця вибраного залу.
+- `GET /api/seats/`, `POST /api/seats/`
+- `GET /api/seats/{id}/`, `PATCH /api/seats/{id}/`, `DELETE /api/seats/{id}/`
+
+```json
+{"hall_id": 1, "row": 1, "number": 1}
+```
+
+Окремий ресурс `/api/seats/` додано для повного CRUD; попередній маршрут
+перегляду місць залу збережено.
+
+### Сеанси
+
+- `GET /api/sessions/`, `POST /api/sessions/`
+- `GET /api/sessions/{id}/`, `PATCH /api/sessions/{id}/`, `DELETE /api/sessions/{id}/`
+- `GET /api/sessions/{id}/seats/`
+
+Для списку доступні `movie_id` і `date` у форматі `YYYY-MM-DD`:
+`/api/sessions/?movie_id=1&date=2026-10-20`.
+
+```json
+{
+  "movie_id": 1,
+  "hall_id": 1,
+  "start_time": "2026-10-20T18:00:00Z",
+  "price": "200.00"
+}
+```
+
+`GET /api/sessions/{id}/seats/` повертає `id`, `row`, `number` і
+`is_available`. Поки бронювань немає, усі місця доступні; після реалізації
+`Booking` це поле обчислюватиметься за активними бронюваннями.
+
+## Статуси, помилки та бізнес-правила
+
+- `200 OK` — успішний перегляд або редагування; `201 Created` — створення;
+  `204 No Content` — видалення.
+- `400 Bad Request` — невалідні дані, параметри або пов'язаний ідентифікатор.
+- `404 Not Found` — об'єкт не знайдено.
+- `409 Conflict` — операція суперечить наявним даним.
+
+Усі очікувані помилки повертаються в одному форматі:
+
+```json
+{
+  "error": {
+    "code": "bad_request",
+    "message": "Request data is invalid.",
+    "details": {"duration": ["Ensure this value is greater than or equal to 1."]}
+  }
+}
+```
+
+Правила предметної області:
+
+- назви жанрів і залів унікальні;
+- `duration` від 1 до 600 хвилин, `rating` від 0.0 до 10.0, `price` додатний;
+- ряд і номер місця додатні; комбінація `(hall_id, row, number)` унікальна;
+- сеанси не можуть перетинатися в одному залі; інтервал визначає тривалість
+  фільму;
+- жанр не видаляється, коли має фільми; фільм — коли має сеанси; зал — коли має
+  місця або сеанси. Ці спроби повертають `409 Conflict`.
+
+## CORS і Postman
+
+Frontend має зберігатися в окремому репозиторії. Бекенд дозволяє запити лише з
+`http://localhost:5173` через `CORS_ALLOWED_ORIGINS`; глобальний доступ через
+`CORS_ALLOW_ALL_ORIGINS` не використовується.
+
+Колекція [postman/CinemaHub.postman_collection.json](postman/CinemaHub.postman_collection.json)
+має формат Collection v2.1 та використовує змінну `{{base_url}}` зі значенням
+`http://127.0.0.1:8000`.
+
+## Архівна документація попереднього етапу
+
+Наступний розділ збережено як початковий дизайн. Реалізованою специфікацією є
+розділ «Поточна специфікація API» вище; авторизація, профіль і бронювання тут
+описані лише як майбутній функціонал.
+
 CinemaHub -- це сайт кінотеатру, на якому можна переглядати фільми, дізнаватися розклад сеансів і бронювати місця.
 
 Я вирішив зробити сайт для одного кінотеатру з декількома залами. Ідея полягає в тому, 
