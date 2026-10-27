@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
+from django.core.management import call_command
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -218,3 +219,9 @@ class CinemaApiTests(APITestCase):
         ]:
             with self.subTest(path=path):
                 self.assert_api_error(self.client.get(path), 404, "not_found")
+
+    def test_seed_demo_command_is_repeatable(self):
+        call_command("seed_demo")
+        call_command("seed_demo")
+        self.assertEqual(Movie.objects.filter(title="Interstellar").count(), 1)
+        self.assertEqual(Movie.objects.count(), 5)
