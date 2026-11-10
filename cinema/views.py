@@ -2,6 +2,7 @@ from django.db.models.deletion import ProtectedError
 from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,7 +19,18 @@ from .serializers import (
 )
 
 
+class ReadOnlyOrStaff(BasePermission):
+    """Allow public cinema browsing while reserving catalogue changes for staff."""
+
+    def has_permission(self, request, view):
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return True
+        return bool(request.user and request.user.is_authenticated and request.user.is_staff)
+
+
 class BaseAPIView(APIView):
+    permission_classes = [ReadOnlyOrStaff]
+
     def get_object(self, queryset, pk):
         try:
             return queryset.get(pk=pk)

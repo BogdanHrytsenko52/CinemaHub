@@ -20,6 +20,8 @@ def custom_exception_handler(exc, context):
         404: "not_found",
         405: "method_not_allowed",
         409: "conflict",
+        401: "not_authenticated",
+        403: "permission_denied",
     }
     code = status_to_code.get(response.status_code, "api_error")
     messages = {
@@ -27,6 +29,8 @@ def custom_exception_handler(exc, context):
         "not_found": "The requested object does not exist.",
         "method_not_allowed": "This HTTP method is not allowed for this endpoint.",
         "conflict": str(getattr(exc, "detail", "The request conflicts with existing data.")),
+        "not_authenticated": "Authentication credentials were not provided.",
+        "permission_denied": "You do not have permission to perform this action.",
     }
     response.data = {
         "error": {

@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from django.core.management import call_command
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -11,6 +12,10 @@ from .models import Genre, Hall, Movie, Seat, Session
 
 class CinemaApiTests(APITestCase):
     def setUp(self):
+        self.staff_user = get_user_model().objects.create_user(
+            username="cinema-admin", password="test-password", is_staff=True
+        )
+        self.client.force_authenticate(user=self.staff_user)
         self.genre = Genre.objects.create(name="Science fiction")
         self.hall = Hall.objects.create(name="Hall 1")
         self.movie = self.make_movie(title="Interstellar", duration=169, rating="8.7")
@@ -61,6 +66,14 @@ class CinemaApiTests(APITestCase):
         self.assertEqual(self.client.delete(f"/api/genres/{genre_id}/").status_code, 204)
 
         self.assert_api_error(self.client.get("/api/genres/9999/"), 404, "not_found")
+
+    def test_public_users_can_browse_but_cannot_change_catalogue(self):
+        self.client.force_authenticate(user=None)
+        self.assertEqual(self.client.get("/api/genres/").status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            self.client.post("/api/genres/", {"name": "Drama"}, format="json").status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
 
     def test_genre_validation_and_related_delete_conflict(self):
         invalid = self.client.post("/api/genres/", {"name": "   "}, format="json")

@@ -165,6 +165,24 @@ Frontend має зберігатися в окремому репозиторі�
 має формат Collection v2.1 та використовує змінну `{{base_url}}` зі значенням
 `http://127.0.0.1:8000`.
 
+## Authentication and permissions
+
+JWT authentication is available through a separate `users` app:
+
+- `POST /api/auth/register/` creates an account. `username`, `email`,
+  `password`, and `password_confirmation` are required; `first_name` and
+  `last_name` are optional. The response contains the public user profile and
+  an access/refresh token pair.
+- `POST /api/auth/login/` accepts `username` and `password` and returns an
+  access/refresh token pair. `POST /api/auth/refresh/` renews an access token.
+- `POST /api/auth/logout/` requires `Authorization: Bearer <access token>` and
+  a `refresh` token in the body; the refresh token is blacklisted.
+- `GET` and `PATCH /api/users/me/` require a Bearer access token.
+
+Cinema data remains publicly readable. Creating, editing, or deleting genres,
+movies, halls, seats, and sessions requires an authenticated Django staff user
+(the administrator role). Passwords are never included in API responses.
+
 ## Архівна документація попереднього етапу
 
 Наступний розділ збережено як початковий дизайн. Реалізованою специфікацією є
