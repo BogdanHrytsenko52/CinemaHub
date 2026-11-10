@@ -1,10 +1,9 @@
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import ProfileSerializer, RegisterSerializer, UserSerializer
+from .serializers import RegisterSerializer, UserSerializer
 
 
 class RegisterView(generics.CreateAPIView):
@@ -26,9 +25,9 @@ class RegisterView(generics.CreateAPIView):
         )
 
 
-class ProfileView(generics.RetrieveUpdateAPIView):
+class ProfileView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = ProfileSerializer
+    serializer_class = UserSerializer
 
     def get_object(self):
         return self.request.user
@@ -38,17 +37,4 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        refresh = request.data.get("refresh")
-        if not refresh:
-            return Response(
-                {"refresh": ["This field is required."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        try:
-            RefreshToken(refresh).blacklist()
-        except TokenError:
-            return Response(
-                {"refresh": ["Token is invalid or expired."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -20,8 +20,6 @@ from .serializers import (
 
 
 class ReadOnlyOrStaff(BasePermission):
-    """Allow public cinema browsing while reserving catalogue changes for staff."""
-
     def has_permission(self, request, view):
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return True

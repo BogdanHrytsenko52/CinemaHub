@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 User = get_user_model()
@@ -28,9 +29,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(UserSerializer):
-    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    password = serializers.CharField(
+        write_only=True, trim_whitespace=False, max_length=128
+    )
     password_confirmation = serializers.CharField(
-        write_only=True, trim_whitespace=False
+        write_only=True, trim_whitespace=False, max_length=128
     )
 
     class Meta(UserSerializer.Meta):
@@ -55,20 +58,13 @@ class RegisterSerializer(UserSerializer):
             raise serializers.ValidationError(
                 {"password_confirmation": "Passwords do not match."}
             )
-        validate_password(attrs["password"], user=User(username=attrs["username"]))
+        try:
+            validate_password(attrs["password"], user=User(username=attrs["username"]))
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": list(exc.messages)}) from exc
         return attrs
 
     def create(self, validated_data):
         validated_data.pop("password_confirmation")
         password = validated_data.pop("password")
         return User.objects.create_user(password=password, **validated_data)
-
-
-class ProfileSerializer(UserSerializer):
-    class Meta(UserSerializer.Meta):
-        read_only_fields = ["id", "username", "role"]
-        extra_kwargs = {
-            "email": {"required": False},
-            "first_name": {"required": False, "allow_blank": True},
-            "last_name": {"required": False, "allow_blank": True},
-        }
