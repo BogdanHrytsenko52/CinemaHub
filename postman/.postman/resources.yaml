@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 6105d395-a81b-451b-8595-70edc19068d4
+
+localResources:
+  collections:
+    - ../CinemaHub.postman_collection.json
