@@ -56,14 +56,18 @@ class CinemaApiTests(APITestCase):
         listing = self.client.get("/api/genres/")
         self.assertEqual(listing.status_code, status.HTTP_200_OK)
         self.assertEqual(len(listing.data), 2)
-        self.assertEqual(self.client.get(f"/api/genres/{genre_id}/").data["name"], "Drama")
+        self.assertEqual(
+            self.client.get(f"/api/genres/{genre_id}/").data["name"], "Drama"
+        )
 
         update = self.client.patch(
             f"/api/genres/{genre_id}/", {"name": "Comedy"}, format="json"
         )
         self.assertEqual(update.status_code, status.HTTP_200_OK)
         self.assertEqual(update.data["name"], "Comedy")
-        self.assertEqual(self.client.delete(f"/api/genres/{genre_id}/").status_code, 204)
+        self.assertEqual(
+            self.client.delete(f"/api/genres/{genre_id}/").status_code, 204
+        )
 
         self.assert_api_error(self.client.get("/api/genres/9999/"), 404, "not_found")
 
@@ -75,7 +79,9 @@ class CinemaApiTests(APITestCase):
             "/api/genres/", {"name": "Science fiction"}, format="json"
         )
         self.assert_api_error(duplicate, 400, "bad_request")
-        self.assert_api_error(self.client.delete(f"/api/genres/{self.genre.id}/"), 409, "conflict")
+        self.assert_api_error(
+            self.client.delete(f"/api/genres/{self.genre.id}/"), 409, "conflict"
+        )
 
     def test_movie_crud_search_filter_and_ordering(self):
         drama = Genre.objects.create(name="Drama")
@@ -93,7 +99,9 @@ class CinemaApiTests(APITestCase):
         )
         self.assertEqual(create.status_code, 201)
         movie_id = create.data["id"]
-        self.assertEqual(self.client.get(f"/api/movies/{movie_id}/").data["title"], "Dune")
+        self.assertEqual(
+            self.client.get(f"/api/movies/{movie_id}/").data["title"], "Dune"
+        )
 
         update = self.client.patch(
             f"/api/movies/{movie_id}/", {"rating": "8.5"}, format="json"
@@ -102,7 +110,9 @@ class CinemaApiTests(APITestCase):
         self.assertEqual(update.data["rating"], "8.5")
 
         self.make_movie(title="Inception", rating="9.0")
-        filtered = self.client.get(f"/api/movies/?search=inter&genre_id={self.genre.id}")
+        filtered = self.client.get(
+            f"/api/movies/?search=inter&genre_id={self.genre.id}"
+        )
         self.assertEqual([movie["title"] for movie in filtered.data], ["Interstellar"])
         ordered = self.client.get("/api/movies/?ordering=-rating")
         self.assertEqual(ordered.data[0]["title"], "Inception")
@@ -110,7 +120,9 @@ class CinemaApiTests(APITestCase):
             self.client.get("/api/movies/?ordering=duration"), 400, "bad_request"
         )
 
-        self.assertEqual(self.client.delete(f"/api/movies/{movie_id}/").status_code, 204)
+        self.assertEqual(
+            self.client.delete(f"/api/movies/{movie_id}/").status_code, 204
+        )
 
     def test_movie_validation_and_delete_with_session_conflict(self):
         invalid = self.client.post(
@@ -133,26 +145,36 @@ class CinemaApiTests(APITestCase):
             start_time=timezone.make_aware(datetime(2026, 10, 20, 18, 0)),
             price=Decimal("200.00"),
         )
-        self.assert_api_error(self.client.delete(f"/api/movies/{self.movie.id}/"), 409, "conflict")
+        self.assert_api_error(
+            self.client.delete(f"/api/movies/{self.movie.id}/"), 409, "conflict"
+        )
 
     def test_hall_and_seat_crud_duplicate_and_related_delete(self):
         create_hall = self.client.post("/api/halls/", {"name": "Hall 2"}, format="json")
         self.assertEqual(create_hall.status_code, 201)
         hall_id = create_hall.data["id"]
-        self.assertEqual(self.client.get(f"/api/halls/{hall_id}/").data["name"], "Hall 2")
         self.assertEqual(
-            self.client.patch(f"/api/halls/{hall_id}/", {"name": "Small hall"}, format="json").status_code,
+            self.client.get(f"/api/halls/{hall_id}/").data["name"], "Hall 2"
+        )
+        self.assertEqual(
+            self.client.patch(
+                f"/api/halls/{hall_id}/", {"name": "Small hall"}, format="json"
+            ).status_code,
             200,
         )
 
         seat = self.client.post(
-            "/api/seats/", {"hall_id": self.hall.id, "row": 1, "number": 1}, format="json"
+            "/api/seats/",
+            {"hall_id": self.hall.id, "row": 1, "number": 1},
+            format="json",
         )
         self.assertEqual(seat.status_code, 201)
         seat_id = seat.data["id"]
         self.assertEqual(self.client.get(f"/api/seats/{seat_id}/").data["number"], 1)
         self.assertEqual(
-            self.client.patch(f"/api/seats/{seat_id}/", {"number": 2}, format="json").status_code,
+            self.client.patch(
+                f"/api/seats/{seat_id}/", {"number": 2}, format="json"
+            ).status_code,
             200,
         )
         hall_seats = self.client.get(f"/api/halls/{self.hall.id}/seats/")
@@ -161,22 +183,30 @@ class CinemaApiTests(APITestCase):
         all_seats = self.client.get("/api/seats/")
         self.assertEqual(all_seats.status_code, 200)
         self.assertEqual(len(all_seats.data), 1)
-        self.assert_api_error(self.client.delete(f"/api/halls/{self.hall.id}/"), 409, "conflict")
+        self.assert_api_error(
+            self.client.delete(f"/api/halls/{self.hall.id}/"), 409, "conflict"
+        )
         self.assertEqual(self.client.delete(f"/api/seats/{seat_id}/").status_code, 204)
         self.assertEqual(self.client.delete(f"/api/halls/{hall_id}/").status_code, 204)
 
         Seat.objects.create(hall=self.hall, row=1, number=3)
         duplicate = self.client.post(
-            "/api/seats/", {"hall_id": self.hall.id, "row": 1, "number": 3}, format="json"
+            "/api/seats/",
+            {"hall_id": self.hall.id, "row": 1, "number": 3},
+            format="json",
         )
         self.assert_api_error(duplicate, 400, "bad_request")
 
     def test_session_crud_filters_conflict_and_session_seats(self):
         Seat.objects.create(hall=self.hall, row=1, number=1)
-        create = self.client.post("/api/sessions/", self.session_payload(), format="json")
+        create = self.client.post(
+            "/api/sessions/", self.session_payload(), format="json"
+        )
         self.assertEqual(create.status_code, 201)
         session_id = create.data["id"]
-        self.assertEqual(self.client.get(f"/api/sessions/{session_id}/").status_code, 200)
+        self.assertEqual(
+            self.client.get(f"/api/sessions/{session_id}/").status_code, 200
+        )
         update = self.client.patch(
             f"/api/sessions/{session_id}/", {"price": "250.00"}, format="json"
         )
@@ -193,14 +223,18 @@ class CinemaApiTests(APITestCase):
         other_movie = self.make_movie(title="Short film", duration=90)
         conflict = self.client.post(
             "/api/sessions/",
-            self.session_payload(movie_id=other_movie.id, start_time="2026-10-20T19:00:00Z"),
+            self.session_payload(
+                movie_id=other_movie.id, start_time="2026-10-20T19:00:00Z"
+            ),
             format="json",
         )
         self.assert_api_error(conflict, 409, "conflict")
         self.assert_api_error(
             self.client.get("/api/sessions/?date=20-10-2026"), 400, "bad_request"
         )
-        self.assertEqual(self.client.delete(f"/api/sessions/{session_id}/").status_code, 204)
+        self.assertEqual(
+            self.client.delete(f"/api/sessions/{session_id}/").status_code, 204
+        )
 
     def test_session_invalid_foreign_key_and_cors(self):
         invalid = self.client.post(
@@ -208,11 +242,13 @@ class CinemaApiTests(APITestCase):
         )
         self.assert_api_error(invalid, 400, "bad_request")
 
-        allowed = self.client.get(
-            "/api/genres/", HTTP_ORIGIN="http://localhost:5173"
+        allowed = self.client.get("/api/genres/", HTTP_ORIGIN="http://localhost:5173")
+        self.assertEqual(
+            allowed["Access-Control-Allow-Origin"], "http://localhost:5173"
         )
-        self.assertEqual(allowed["Access-Control-Allow-Origin"], "http://localhost:5173")
-        disallowed = self.client.get("/api/genres/", HTTP_ORIGIN="http://localhost:3000")
+        disallowed = self.client.get(
+            "/api/genres/", HTTP_ORIGIN="http://localhost:3000"
+        )
         self.assertNotIn("Access-Control-Allow-Origin", disallowed)
 
     def test_missing_detail_resources_return_consistent_404(self):

@@ -28,7 +28,9 @@ def custom_exception_handler(exc, context):
         "bad_request": "Request data is invalid.",
         "not_found": "The requested object does not exist.",
         "method_not_allowed": "This HTTP method is not allowed for this endpoint.",
-        "conflict": str(getattr(exc, "detail", "The request conflicts with existing data.")),
+        "conflict": str(
+            getattr(exc, "detail", "The request conflicts with existing data.")
+        ),
         "not_authenticated": "Authentication credentials were not provided.",
         "permission_denied": "You do not have permission to perform this action.",
     }

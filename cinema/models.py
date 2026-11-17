@@ -24,7 +24,10 @@ class Movie(models.Model):
     rating = models.DecimalField(
         max_digits=3,
         decimal_places=1,
-        validators=[MinValueValidator(Decimal("0.0")), MaxValueValidator(Decimal("10.0"))],
+        validators=[
+            MinValueValidator(Decimal("0.0")),
+            MaxValueValidator(Decimal("10.0")),
+        ],
     )
     age_rating = models.CharField(max_length=10)
 

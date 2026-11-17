@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 
 from cinema.models import Genre, Movie
 
-
 DEMO_MOVIES = [
     {
         "genre": "Наукова фантастика",
@@ -56,5 +55,7 @@ class Command(BaseCommand):
         for item in DEMO_MOVIES:
             genre, _ = Genre.objects.get_or_create(name=item["genre"])
             movie_data = {key: value for key, value in item.items() if key != "genre"}
-            Movie.objects.update_or_create(title=item["title"], defaults={**movie_data, "genre": genre})
+            Movie.objects.update_or_create(
+                title=item["title"], defaults={**movie_data, "genre": genre}
+            )
         self.stdout.write(self.style.SUCCESS("Demo movies are ready."))

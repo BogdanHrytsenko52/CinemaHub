@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "first_name", "last_name", "role"]
         read_only_fields = ["id", "username", "role"]
 
-    def get_role(self, user):
+    def get_role(self, user) -> str:
         return "admin" if user.is_staff else "user"
 
     def validate_email(self, value):

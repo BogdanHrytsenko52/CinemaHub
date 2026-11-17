@@ -775,3 +775,77 @@ python manage.py test
 Після входу в навігації показується username та кнопка виходу. Токени зберігаються в `sessionStorage`, а access-токен може автоматично оновлюватися через refresh.
 
 Після виходу токени видаляються, тому для повторного відкриття профілю потрібно знову авторизуватися.
+
+## Тестування
+
+Для тестів потрібно встановити залежності:
+
+```powershell
+python -m pip install -r requirements.txt -r requirements-dev.txt
+```
+
+Запуск тестів:
+
+```powershell
+pytest
+```
+
+Для тестів використовую `pytest`, `pytest-django` і `pytest-cov`.
+
+Тести жанрів знаходяться у `cinema/test_api_pytest.py`.
+
+Вони перевіряють GET, POST, PATCH, DELETE, доступ для адміністратора, помилки `400`, `401`, `403` і `404`.
+
+Тести авторизації знаходяться у `users/test_auth_pytest.py`.
+
+Вони перевіряють реєстрацію, вхід, refresh, logout і профіль користувача.
+
+Після запуску `pytest` показується coverage.
+
+Поточний результат -- 20 тестів пройшли, coverage прикладного коду `cinema` та `users` -- 94%.
+
+Тестові файли і міграції не входять у coverage.
+
+Для HTML-звіту:
+
+```powershell
+pytest --cov=cinema --cov=users --cov-report=html
+```
+
+## Swagger і OpenAPI
+
+Після запуску сервера Swagger доступний тут:
+
+[http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/)
+
+ReDoc:
+
+[http://127.0.0.1:8000/api/redoc/](http://127.0.0.1:8000/api/redoc/)
+
+OpenAPI schema:
+
+[http://127.0.0.1:8000/api/schema/](http://127.0.0.1:8000/api/schema/)
+
+Щоб зберегти schema у файл, потрібно виконати:
+
+```powershell
+python manage.py spectacular --file schema.yml
+```
+
+Swagger показує endpoint-и, методи, параметри, запити, відповіді і статуси.
+
+## .env і логування
+
+Перед запуском потрібно скопіювати `.env.example` у `.env`.
+
+У `.env` є `DJANGO_SECRET_KEY` і `DJANGO_DEBUG`.
+
+Файл `.env` уже доданий у `.gitignore`.
+
+У логах записуються створення, зміна і видалення жанрів, паролі та токени не записуються.
+
+## Logout
+
+`POST /api/auth/logout/` вимагає access токен і повертає `204 No Content`.
+
+Зараз logout не відкликає refresh токен на сервері, токен видаляється на фронтенді.

@@ -1,0 +1,11 @@
+[run]
+branch = True
+source = cinema, users
+omit =
+    */migrations/*
+    */tests.py
+    */test_*.py
+
+[report]
+show_missing = True
+skip_covered = False

@@ -27,7 +27,9 @@ class MovieListSerializer(serializers.ModelSerializer):
 
 
 class MovieSerializer(serializers.ModelSerializer):
-    genre_id = serializers.PrimaryKeyRelatedField(source="genre", queryset=Genre.objects.all())
+    genre_id = serializers.PrimaryKeyRelatedField(
+        source="genre", queryset=Genre.objects.all()
+    )
 
     class Meta:
         model = Movie
@@ -67,7 +69,9 @@ class HallSerializer(serializers.ModelSerializer):
 
 
 class SeatSerializer(serializers.ModelSerializer):
-    hall_id = serializers.PrimaryKeyRelatedField(source="hall", queryset=Hall.objects.all())
+    hall_id = serializers.PrimaryKeyRelatedField(
+        source="hall", queryset=Hall.objects.all()
+    )
 
     class Meta:
         model = Seat
@@ -75,8 +79,12 @@ class SeatSerializer(serializers.ModelSerializer):
 
 
 class SessionSerializer(serializers.ModelSerializer):
-    movie_id = serializers.PrimaryKeyRelatedField(source="movie", queryset=Movie.objects.all())
-    hall_id = serializers.PrimaryKeyRelatedField(source="hall", queryset=Hall.objects.all())
+    movie_id = serializers.PrimaryKeyRelatedField(
+        source="movie", queryset=Movie.objects.all()
+    )
+    hall_id = serializers.PrimaryKeyRelatedField(
+        source="hall", queryset=Hall.objects.all()
+    )
 
     class Meta:
         model = Session
@@ -97,7 +105,9 @@ class SessionSerializer(serializers.ModelSerializer):
             existing_sessions = existing_sessions.exclude(pk=instance.pk)
 
         for existing in existing_sessions:
-            existing_end = existing.start_time + timedelta(minutes=existing.movie.duration)
+            existing_end = existing.start_time + timedelta(
+                minutes=existing.movie.duration
+            )
             if start_time < existing_end and existing.start_time < new_end:
                 raise Conflict(
                     "The hall already has a session that overlaps this time interval."
@@ -111,6 +121,6 @@ class SessionSeatSerializer(SeatSerializer):
     class Meta(SeatSerializer.Meta):
         fields = ["id", "row", "number", "is_available"]
 
-    def get_is_available(self, seat):
+    def get_is_available(self, seat) -> bool:
         # Bookings are deliberately outside the current project scope.
         return True

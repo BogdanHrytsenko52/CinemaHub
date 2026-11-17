@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -33,6 +34,7 @@ class ProfileView(generics.RetrieveAPIView):
         return self.request.user
 
 
+@extend_schema(request=None, responses={204: None})
 class LogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
